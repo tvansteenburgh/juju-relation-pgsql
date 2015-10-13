@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from charmhelpers.core.reactive import RelationBase
-from charmhelpers.core.reactive import hook
-from charmhelpers.core.reactive import scopes
+from charms.reactive import RelationBase
+from charms.reactive import hook
+from charms.reactive import scopes
 
 
 class PostgreSQLClient(RelationBase):
