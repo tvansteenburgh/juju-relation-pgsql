@@ -15,6 +15,8 @@ from charms.reactive import RelationBase
 from charms.reactive import hook
 from charms.reactive import scopes
 
+from charmhelpers.core.hookenv import local_unit
+
 
 class PostgreSQLClient(RelationBase):
     # We only expect a single pgsql server to be related.  Additionally, if
@@ -28,13 +30,18 @@ class PostgreSQLClient(RelationBase):
     # These remote data fields will be automatically mapped to accessors
     # with a basic documentation string provided.
     auto_accessors = ['host', 'port', 'database', 'user', 'password',
-                      'schema_user', 'schema_password']
+                      'schema_user', 'schema_password', 'allowed-units']
 
     @hook('{requires:pgsql}-relation-{joined,changed}')
     def changed(self):
         self.set_state('{relation_name}.connected')
         if self.connection_string():
             self.set_state('{relation_name}.database.available')
+
+    @hook('{requires:pgsql}-relation-{broken,departed}')
+    def broken(self):
+        self.remove_state('{relation_name}.connected')
+        self.remove_state('{relation_name}.database.available')
 
     def request_roles(self, *roles):
         """
@@ -62,8 +69,9 @@ class PostgreSQLClient(RelationBase):
             'database': self.database(),
             'user': self.user(),
             'password': self.password(),
+            'allowed_units': (self.allowed_units() or '').split(),
         }
-        if all(data.values()):
+        if all(data.values()) and local_unit() in data['allowed_units']:
             return str.format(
                 'host={host} port={port} dbname={database} user={user} password={password}',
                 **data)
